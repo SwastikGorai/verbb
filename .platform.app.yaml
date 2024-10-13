@@ -14,7 +14,7 @@ type: 'python:3.11'
 # side is in the form `<service name>:<endpoint name>`.
 # More information: https://docs.platform.sh/create-apps/app-reference.html#relationships
 relationships:
-  database: "db:mysql"
+  # database: "db:mysql"
   rediscache: "cache:redis"
 
 # The size of the persistent disk of the application (in MB). Minimum value is 128.
