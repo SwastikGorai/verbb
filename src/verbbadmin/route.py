@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from auth import create_access_token, get_current_user, verify_password, get_password_hash
-from schemas import Token, UserCreate
-from models import User
-from schools.models import SchoolEmail
-from db import get_db
+from src.auth import create_access_token, get_current_user, verify_password, get_password_hash
+from src.schemas import Token, UserCreate, SchoolEmail
+from src.verbbadmin.models import User
+from src.schools.models import SchoolEmail as SEmail
+from src.db import get_db
 router = APIRouter()
 
 
@@ -18,7 +18,10 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = get_user(db, user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    new_user = User(email=user.email, hashed_password=get_password_hash(user.password))
+    new_user = User(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     return {"email": new_user.email, "message": "User created successfully"}
 
 
@@ -37,10 +40,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @router.post("/add_school")
 async def add_school_email(email_update: SchoolEmail, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    e = db.query(SchoolEmail).filter(SchoolEmail.email == email_update.email).first()
+    e = db.query(SEmail).filter(SEmail.email == email_update.email).first()
     if e:
         raise HTTPException(status_code=400, detail="Email already registered")
-    new = SchoolEmail(email=email_update.email, is_active=email_update.is_active)
+    new = SEmail(**email_update.model_dump())
     db.add(new)
     db.commit()
     db.refresh(new)
@@ -48,7 +51,7 @@ async def add_school_email(email_update: SchoolEmail, current_user: str = Depend
 
 @router.put("/update_school")
 async def update_school_email(email_update: SchoolEmail, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    model = db.query(SchoolEmail).filter(SchoolEmail.email == email_update.email).first()
+    model = db.query(SEmail).filter(SEmail.email == email_update.email).first()
     if not model:
         raise HTTPException(status_code=404, detail="Email not found")
     update_data = email_update.model_dump(exclude_unset=True)
@@ -61,7 +64,7 @@ async def update_school_email(email_update: SchoolEmail, current_user: str = Dep
 
 @router.post("/remove_email")
 async def remove_school_email(email_update: SchoolEmail, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    model = db.query(SchoolEmail).filter(SchoolEmail.email == email_update.email).first()
+    model = db.query(SEmail).filter(SEmail.email == email_update.email).first()
     if not model:
         raise HTTPException(status_code=404, detail="Email not found")
     db.delete(model)
@@ -70,7 +73,7 @@ async def remove_school_email(email_update: SchoolEmail, current_user: str = Dep
 
 @router.get("/get_schools")
 async def get_schools(current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    schools = db.query(SchoolEmail).all()
+    schools = db.query(SEmail).all()
     if not schools:
         raise HTTPException(status_code=404, detail="No schools found")
     return schools

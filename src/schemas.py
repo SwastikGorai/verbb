@@ -21,6 +21,8 @@ class UserLogin(BaseModel):
 
 
 class SchoolEmail(BaseModel):
+    school_name: str
+    teacher_name: str
     email: EmailStr
     is_active: bool
     

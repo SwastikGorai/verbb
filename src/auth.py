@@ -4,8 +4,9 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
+from src.verbbadmin.models import User
 from sqlalchemy.orm import Session
-from db import get_db, get_user
+from src.db import get_db
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -15,6 +16,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def get_user(db, email: str):
+    return db.query(User).filter(User.email == email).first()
 
 
 def verify_password(plain_password, hashed_password):
