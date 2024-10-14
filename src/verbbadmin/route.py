@@ -18,7 +18,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = get_user(db, user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    new_user = User(**user.model_dump())
+    new_user = User(email=user.email, hashed_password=get_password_hash(user.password))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
